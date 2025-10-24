@@ -1,11 +1,15 @@
 import { Button } from '@/components/ui/button'
 import {useState} from "react";
+import {useCalculatorStore} from "@/stores/store.ts";
 
 function App() {
     const [display, setDisplay] = useState('0');
     const [firstNumber, setFirstNumber] = useState(" ");
     const [operation, setOperation] = useState('');
     const [isNewNumber, setIsNewNumber] = useState(true);
+    const [showHistory, setShowHistory] = useState(false);
+
+    const {history, addToHistory, clearHistory} = useCalculatorStore();
 
     const handleNumber = (num: string) => {
         if (isNewNumber){
@@ -46,18 +50,31 @@ function App() {
                     return;
             }
 
-            setDisplay(result.toString());
+            const expression = `${num1} ${operation} ${num2}`;
+            const resultStr = result.toString();
+
+
+            addToHistory(expression, resultStr)
+
+            setDisplay(resultStr);
             setFirstNumber('');
             setOperation('');
             setIsNewNumber (true);
         }
     }
 
+    const handleClear = () => {
+        setDisplay('0');
+        setFirstNumber('');
+        setOperation('');
+        setIsNewNumber(true);
+    }
+
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-[#dce4f1]">
-            <div className="bg-white h-[600px] w-[300px] rounded-2xl shadow-2xl ">
-                <h1 className="text-lg font-bold text-center text-[#bfcfb4] mt-2">
+            <div className="bg-white h-full w-[300px] rounded-2xl shadow-2xl ">
+                <h1 className="text-lg font-bold text-center text-black mt-2">
                     Calculator
                 </h1>
                 <div className="flex justify-center mt-5">
@@ -106,10 +123,40 @@ function App() {
                     <Button onClick={() => handleNumber('3')} variant="default">3</Button>
                     <Button onClick={() => handleOperation('−')} variant="operator">−</Button>
 
-                    <Button onClick={() => handleNumber('0')} variant="default" className="col-span-2 w-full">0</Button>
-                    <Button onClick={calculate} variant="outline">=</Button>
+                    <Button onClick={() => handleNumber('0')} variant="default">0</Button>
+                    <Button onClick={calculate} variant="operator">=</Button>
+                    <Button onClick={handleClear} variant="operator">C</Button>
                     <Button onClick={() => handleOperation('+')}variant="operator">+</Button>
                 </div>
+                <div className="flex px-4 mt-3 mb-4">
+                    <Button onClick={() => setShowHistory(!showHistory)} variant="outline" className="flex-1">
+                        {showHistory ? 'Hide' : 'Show'} History
+                    </Button>
+                </div>
+                {showHistory && (
+                    <div className="mx-4 mt-4 mb-4 bg-gray-200 rounded-3xl max-h-60 p-4 overflow-y-auto ">
+                        <div className="flex justify-end items-center mb-3">
+                            {history.length > 0 && (
+                                <Button onClick={clearHistory} variant ='ghost' className='h-6 text-xs'>
+                                    Clear All
+                                </Button>
+                            )}
+                        </div>
+                        {history.length === 0 ? (
+                            <p className="text-gray-500 text-sm text-center py-4">
+                                No history yet.
+                            </p>
+                        ):(
+                            <div className="space-y-2">
+                                {history.map((item,) =>(
+                                    <div key={item.timestamp} className="bg-gray-200 p-3 rounded-3xl border border-y-gray-900">
+                                        <div className="text-lg text-black">{item.expression} = {item.result}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     )
